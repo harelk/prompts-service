@@ -11,7 +11,7 @@ type FilterTab = "all" | PromptStatus;
 const TABS: { key: FilterTab; label: string }[] = [
   { key: "all", label: "הכל" },
   { key: "draft", label: "טיוטה" },
-  { key: "active", label: "פעיל" },
+  { key: "active", label: "ממתין לביצוע" },
   { key: "done", label: "הושלם" },
   { key: "archived", label: "ארכיון" },
 ];

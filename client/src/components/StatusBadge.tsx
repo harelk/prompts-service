@@ -9,7 +9,7 @@ const STATUS_CONFIG: Record<
     className: "bg-status-draft-bg text-status-draft-text",
   },
   active: {
-    label: "פעיל",
+    label: "ממתין לביצוע",
     className: "bg-status-active-bg text-status-active-text",
   },
   done: {

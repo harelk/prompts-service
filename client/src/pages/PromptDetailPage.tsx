@@ -100,7 +100,7 @@ export default function PromptDetailPage() {
 
   const STATUS_OPTIONS: { value: PromptStatus; label: string }[] = [
     { value: "draft", label: "טיוטה" },
-    { value: "active", label: "פעיל" },
+    { value: "active", label: "ממתין לביצוע" },
     { value: "done", label: "הושלם" },
     { value: "archived", label: "ארכיון" },
   ];
