@@ -56,10 +56,14 @@ export default function CreatePromptPage() {
     rawTranscription: string;
     cleanedText: string;
     suggestedTitle: string;
+    suggestedServiceIds: string[];
   }) => {
     setContent(result.cleanedText);
     setTitle(result.suggestedTitle);
     setRawTranscription(result.rawTranscription);
+    if (result.suggestedServiceIds?.length > 0) {
+      setSelectedServiceIds(result.suggestedServiceIds);
+    }
     setMode("type"); // switch to type mode to review
     setVoiceError(null);
   };

@@ -55,17 +55,26 @@ const voiceRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     // Load service names so the cleanup AI won't "fix" them
-    const allServices = await db.select({ name: services.name }).from(services);
+    const allServices = await db.select({ id: services.id, name: services.name }).from(services);
     const serviceNames = allServices.map((s) => s.name);
 
     // Step 2: Cleanup with xAI (raw transcription is already captured above)
     let cleanedText = rawTranscription;
     let suggestedTitle = "";
+    let suggestedServiceIds: string[] = [];
 
     try {
       const result = await cleanupTranscription(rawTranscription, serviceNames);
       cleanedText = result.cleanedText;
       suggestedTitle = result.suggestedTitle;
+
+      // Map suggested service names to IDs
+      if (result.suggestedServiceNames.length > 0) {
+        const nameToId = new Map(allServices.map((s) => [s.name.toLowerCase(), s.id]));
+        suggestedServiceIds = result.suggestedServiceNames
+          .map((name) => nameToId.get(name.toLowerCase()))
+          .filter((id): id is string => Boolean(id));
+      }
     } catch (err) {
       fastify.log.error(err, "Claude cleanup failed — returning raw transcription");
       // Return raw transcription so user doesn't lose their content
@@ -76,6 +85,7 @@ const voiceRoutes: FastifyPluginAsync = async (fastify) => {
       rawTranscription,
       cleanedText,
       suggestedTitle,
+      suggestedServiceIds,
     });
   });
 };

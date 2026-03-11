@@ -17,6 +17,7 @@ function getClient(): OpenAI {
 export interface CleanupResult {
   cleanedText: string;
   suggestedTitle: string;
+  suggestedServiceNames: string[];
 }
 
 export async function cleanupTranscription(
@@ -35,12 +36,14 @@ export async function cleanupTranscription(
 1. לנקות ולסדר את הטקסט — תקן שגיאות כתיב, הוסף פיסוק, הסר מילות מילוי ("אמ", "אה", וכדומה).
 2. לשמור על המשמעות המקורית ועל כל ההנחיות שהמשתמש אמר.
 3. להציע כותרת קצרה וממוקדת (עד 60 תווים) לפרומפט.
-4. אם מוזכר שם סרוויס מוכר — אל תשנה אותו, גם אם הוא נשמע כמו שגיאת כתיב.${serviceNamesBlock}
+4. אם מוזכר שם סרוויס מוכר — אל תשנה אותו, גם אם הוא נשמע כמו שגיאת כתיב.
+5. אם מוזכרים סרוויסים מהרשימה (במפורש או במשתמע) — החזר את שמותיהם המדויקים ב-suggestedServiceNames. החזר מערך ריק אם לא מוזכר אף סרוויס.${serviceNamesBlock}
 
 החזר תגובה **רק** בפורמט JSON הבא, ללא טקסט נוסף:
 {
   "cleanedText": "...",
-  "suggestedTitle": "..."
+  "suggestedTitle": "...",
+  "suggestedServiceNames": ["..."]
 }`;
 
   const response = await xai.chat.completions.create({
@@ -68,6 +71,10 @@ export async function cleanupTranscription(
 
   if (!parsed.cleanedText || !parsed.suggestedTitle) {
     throw new Error("xAI response missing required fields");
+  }
+
+  if (!Array.isArray(parsed.suggestedServiceNames)) {
+    parsed.suggestedServiceNames = [];
   }
 
   return parsed;
