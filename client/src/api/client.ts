@@ -1,16 +1,21 @@
-const AUTH_KEY = "prompts_auth_password";
+const TOKEN_KEY = "prompts_auth_token";
 
-export function getStoredPassword(): string {
-  return localStorage.getItem(AUTH_KEY) ?? "";
+export function getStoredToken(): string {
+  return localStorage.getItem(TOKEN_KEY) ?? "";
 }
 
-export function setStoredPassword(password: string): void {
-  localStorage.setItem(AUTH_KEY, password);
+export function setStoredToken(token: string): void {
+  localStorage.setItem(TOKEN_KEY, token);
 }
 
-export function clearStoredPassword(): void {
-  localStorage.removeItem(AUTH_KEY);
+export function clearStoredToken(): void {
+  localStorage.removeItem(TOKEN_KEY);
 }
+
+// Backward compat exports (used by useAuth)
+export const getStoredPassword = getStoredToken;
+export const setStoredPassword = setStoredToken;
+export const clearStoredPassword = clearStoredToken;
 
 class ApiError extends Error {
   constructor(
@@ -23,11 +28,25 @@ class ApiError extends Error {
   }
 }
 
+export async function loginRequest(
+  email: string,
+  password: string
+): Promise<{ token: string; email: string } | null> {
+  const res = await fetch("/api/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+
+  if (!res.ok) return null;
+  return res.json();
+}
+
 async function request<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const password = getStoredPassword();
+  const token = getStoredToken();
 
   const headers: Record<string, string> = {
     ...(options.headers as Record<string, string>),
@@ -37,8 +56,8 @@ async function request<T>(
     headers["Content-Type"] = "application/json";
   }
 
-  if (password) {
-    headers["Authorization"] = `Bearer ${password}`;
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
   }
 
   const res = await fetch(path, {
@@ -54,7 +73,7 @@ async function request<T>(
 
   if (!res.ok) {
     if (res.status === 401) {
-      clearStoredPassword();
+      clearStoredToken();
       window.dispatchEvent(new Event("auth:logout"));
     }
     const errData = data?.error ?? {};

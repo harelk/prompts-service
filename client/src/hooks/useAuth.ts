@@ -1,37 +1,31 @@
 import { useState, useEffect, useCallback } from "react";
-import { getStoredPassword, setStoredPassword, clearStoredPassword } from "../api/client";
+import { getStoredToken, setStoredToken, clearStoredToken, loginRequest } from "../api/client";
 
 export function useAuth() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
-    () => Boolean(getStoredPassword())
+    () => Boolean(getStoredToken())
   );
 
-  const login = useCallback(async (password: string): Promise<boolean> => {
-    setStoredPassword(password);
+  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     try {
-      const res = await fetch("/api/health");
-      if (res.status === 200) {
-        // Health is unauthenticated, verify with a real auth request
-        const authRes = await fetch("/api/services", {
-          headers: { Authorization: `Bearer ${password}` },
-        });
-        if (authRes.ok) {
-          setIsAuthenticated(true);
-          return true;
-        }
+      const result = await loginRequest(email, password);
+      if (result?.token) {
+        setStoredToken(result.token);
+        setIsAuthenticated(true);
+        return true;
       }
-      clearStoredPassword();
+      clearStoredToken();
       setIsAuthenticated(false);
       return false;
     } catch {
-      clearStoredPassword();
+      clearStoredToken();
       setIsAuthenticated(false);
       return false;
     }
   }, []);
 
   const logout = useCallback(() => {
-    clearStoredPassword();
+    clearStoredToken();
     setIsAuthenticated(false);
   }, []);
 

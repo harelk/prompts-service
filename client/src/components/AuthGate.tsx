@@ -3,11 +3,12 @@ import { useAuth } from "../hooks/useAuth";
 
 export default function AuthGate({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, login } = useAuth();
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shaking, setShaking] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
 
   if (isAuthenticated) {
     return <>{children}</>;
@@ -15,20 +16,20 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!password.trim()) return;
+    if (!email.trim() || !password.trim()) return;
 
     setLoading(true);
     setError(null);
 
-    const success = await login(password.trim());
+    const success = await login(email.trim(), password.trim());
     setLoading(false);
 
     if (!success) {
-      setError("סיסמה שגויה. אנא נסה שנית.");
+      setError("אימייל או סיסמה שגויים");
       setShaking(true);
       setTimeout(() => setShaking(false), 500);
       setPassword("");
-      inputRef.current?.focus();
+      passwordRef.current?.focus();
     }
   };
 
@@ -53,20 +54,33 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
               </svg>
             </div>
             <h1 className="text-xl font-semibold text-text-primary">ניהול פרומפטים</h1>
-            <p className="text-sm text-text-secondary mt-1">הכנס סיסמה להמשך</p>
+            <p className="text-sm text-text-secondary mt-1">התחבר להמשך</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="אימייל"
+                autoFocus
+                autoComplete="email"
+                dir="ltr"
+                className="w-full px-4 py-3 rounded-md border text-md bg-background-app placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors border-gray-200"
+              />
+            </div>
+
             <div className={shaking ? "shake" : ""}>
               <input
-                ref={inputRef}
+                ref={passwordRef}
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="סיסמה"
-                autoFocus
                 autoComplete="current-password"
-                className={`w-full px-4 py-3 rounded-md border text-md text-right bg-background-app placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors ${
+                dir="ltr"
+                className={`w-full px-4 py-3 rounded-md border text-md bg-background-app placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors ${
                   error ? "border-error" : "border-gray-200"
                 }`}
               />
@@ -77,7 +91,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
 
             <button
               type="submit"
-              disabled={loading || !password.trim()}
+              disabled={loading || !email.trim() || !password.trim()}
               className="w-full py-3 bg-primary text-white font-medium rounded-md hover:bg-primary-hover active:bg-primary-pressed disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? "מתחבר..." : "כניסה"}
