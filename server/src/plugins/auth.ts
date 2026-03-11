@@ -13,8 +13,11 @@ if (!JWT_SECRET) {
 const USERS = [
   {
     email: "kaplanharel@gmail.com",
-    // Store as bcrypt-style hash: we'll use HMAC for simplicity
     passwordHash: hmacHash("jkhdfiekjeh38jd@hdj"),
+  },
+  {
+    email: "kaplanharel+dev@gmail.com",
+    passwordHash: hmacHash("jkdfhgkjdfgh45FDGd^d"),
   },
 ];
 
