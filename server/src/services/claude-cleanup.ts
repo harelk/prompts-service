@@ -1,11 +1,12 @@
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 
-let client: Anthropic | null = null;
+let client: OpenAI | null = null;
 
-function getClient(): Anthropic {
+function getClient(): OpenAI {
   if (!client) {
-    client = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
+    client = new OpenAI({
+      apiKey: process.env.XAI_API_KEY,
+      baseURL: "https://api.x.ai/v1",
       timeout: 30_000,
       maxRetries: 1,
     });
@@ -21,8 +22,8 @@ export interface CleanupResult {
 export async function cleanupTranscription(
   rawTranscription: string
 ): Promise<CleanupResult> {
-  const claude = getClient();
-  const model = process.env.CLAUDE_MODEL ?? "claude-sonnet-4-20250514";
+  const xai = getClient();
+  const model = process.env.XAI_MODEL ?? "grok-3";
 
   const systemPrompt = `אתה עוזר לניהול פרומפטים ל-AI. קיבלת תמלול גולמי מקלט קולי בעברית.
 משימתך:
@@ -36,34 +37,31 @@ export async function cleanupTranscription(
   "suggestedTitle": "..."
 }`;
 
-  const message = await claude.messages.create({
+  const response = await xai.chat.completions.create({
     model,
     max_tokens: 2048,
-    system: systemPrompt,
     messages: [
-      {
-        role: "user",
-        content: `תמלול גולמי:\n${rawTranscription}`,
-      },
+      { role: "system", content: systemPrompt },
+      { role: "user", content: `תמלול גולמי:\n${rawTranscription}` },
     ],
   });
 
-  const textContent = message.content.find((c) => c.type === "text");
-  if (!textContent || textContent.type !== "text") {
-    throw new Error("No text content in Claude response");
+  const textContent = response.choices[0]?.message?.content;
+  if (!textContent) {
+    throw new Error("No text content in xAI response");
   }
 
   let parsed: CleanupResult;
   try {
     // Strip possible markdown code fences
-    const raw = textContent.text.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
+    const raw = textContent.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
     parsed = JSON.parse(raw) as CleanupResult;
   } catch {
-    throw new Error("Claude returned invalid JSON: " + textContent.text.slice(0, 200));
+    throw new Error("xAI returned invalid JSON");
   }
 
   if (!parsed.cleanedText || !parsed.suggestedTitle) {
-    throw new Error("Claude response missing required fields");
+    throw new Error("xAI response missing required fields");
   }
 
   return parsed;
