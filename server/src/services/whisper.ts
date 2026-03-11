@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+import OpenAI, { toFile } from "openai";
 
 const ALLOWED_MIME_TYPES = new Set([
   "audio/webm",
@@ -37,12 +37,8 @@ export async function transcribeAudio(
   // Map MIME type to file extension for the OpenAI SDK
   const ext = mimeTypeToExt(mimeType);
 
-  // Copy buffer into a fresh ArrayBuffer to satisfy strict BlobPart typing
-  const arrayBuffer = audioBuffer.buffer.slice(
-    audioBuffer.byteOffset,
-    audioBuffer.byteOffset + audioBuffer.byteLength
-  ) as ArrayBuffer;
-  const file = new File([arrayBuffer], `${filename}.${ext}`, {
+  // Use OpenAI's toFile helper for Node 18 compatibility (no global File)
+  const file = await toFile(audioBuffer, `${filename}.${ext}`, {
     type: mimeType,
   });
 
