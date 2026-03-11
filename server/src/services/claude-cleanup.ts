@@ -20,16 +20,22 @@ export interface CleanupResult {
 }
 
 export async function cleanupTranscription(
-  rawTranscription: string
+  rawTranscription: string,
+  serviceNames: string[] = []
 ): Promise<CleanupResult> {
   const xai = getClient();
   const model = process.env.XAI_MODEL ?? "grok-3";
+
+  const serviceNamesBlock = serviceNames.length > 0
+    ? `\n\nשמות סרוויסים מוכרים (אל תתקן אותם, שמור אותם כפי שהם):\n${serviceNames.join(", ")}`
+    : "";
 
   const systemPrompt = `אתה עוזר לניהול פרומפטים ל-AI. קיבלת תמלול גולמי מקלט קולי בעברית.
 משימתך:
 1. לנקות ולסדר את הטקסט — תקן שגיאות כתיב, הוסף פיסוק, הסר מילות מילוי ("אמ", "אה", וכדומה).
 2. לשמור על המשמעות המקורית ועל כל ההנחיות שהמשתמש אמר.
 3. להציע כותרת קצרה וממוקדת (עד 60 תווים) לפרומפט.
+4. אם מוזכר שם סרוויס מוכר — אל תשנה אותו, גם אם הוא נשמע כמו שגיאת כתיב.${serviceNamesBlock}
 
 החזר תגובה **רק** בפורמט JSON הבא, ללא טקסט נוסף:
 {

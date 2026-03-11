@@ -1,6 +1,8 @@
 import type { FastifyPluginAsync } from "fastify";
 import { validateMimeType, transcribeAudio } from "../services/whisper.js";
 import { cleanupTranscription } from "../services/claude-cleanup.js";
+import { db } from "../db/client.js";
+import { services } from "../db/schema/services.js";
 
 const voiceRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post("/api/voice/transcribe", async (request, reply) => {
@@ -52,12 +54,16 @@ const voiceRoutes: FastifyPluginAsync = async (fastify) => {
       });
     }
 
-    // Step 2: Cleanup with Claude (raw transcription is already captured above)
+    // Load service names so the cleanup AI won't "fix" them
+    const allServices = await db.select({ name: services.name }).from(services);
+    const serviceNames = allServices.map((s) => s.name);
+
+    // Step 2: Cleanup with xAI (raw transcription is already captured above)
     let cleanedText = rawTranscription;
     let suggestedTitle = "";
 
     try {
-      const result = await cleanupTranscription(rawTranscription);
+      const result = await cleanupTranscription(rawTranscription, serviceNames);
       cleanedText = result.cleanedText;
       suggestedTitle = result.suggestedTitle;
     } catch (err) {
