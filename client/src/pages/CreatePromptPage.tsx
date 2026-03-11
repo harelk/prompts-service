@@ -13,7 +13,7 @@ export default function CreatePromptPage() {
   const navigate = useNavigate();
   const { services } = useServices();
 
-  const [mode, setMode] = useState<InputMode>("type");
+  const [mode, setMode] = useState<InputMode>("record");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [rawTranscription, setRawTranscription] = useState<string | undefined>();
