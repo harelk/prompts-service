@@ -23,6 +23,8 @@ export default {
           "draft-text": "#4A4A54",
           "active-bg": "#EEF0FF",
           "active-text": "#3235A8",
+          "in_progress-bg": "#FFF0E6",
+          "in_progress-text": "#C05600",
           "done-bg": "#EAFAF2",
           "done-text": "#148048",
           "archived-bg": "#FFF8E6",

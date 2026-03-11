@@ -12,6 +12,7 @@ const TABS: { key: FilterTab; label: string }[] = [
   { key: "all", label: "הכל" },
   { key: "draft", label: "טיוטה" },
   { key: "active", label: "ממתין לביצוע" },
+  { key: "in_progress", label: "בביצוע" },
   { key: "done", label: "הושלם" },
   { key: "archived", label: "ארכיון" },
 ];

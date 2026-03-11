@@ -18,6 +18,7 @@ export default function CreatePromptPage() {
   const [content, setContent] = useState("");
   const [rawTranscription, setRawTranscription] = useState<string | undefined>();
   const [status, setStatus] = useState<PromptStatus>("draft");
+  const [note, setNote] = useState("");
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -39,6 +40,7 @@ export default function CreatePromptPage() {
       const prompt = await createPrompt({
         title: title.trim(),
         content: content.trim(),
+        note: note.trim() || undefined,
         status,
         serviceIds: selectedServiceIds,
         rawTranscription,
@@ -71,6 +73,7 @@ export default function CreatePromptPage() {
   const STATUS_OPTIONS: { value: PromptStatus; label: string }[] = [
     { value: "draft", label: "טיוטה" },
     { value: "active", label: "ממתין לביצוע" },
+    { value: "in_progress", label: "בביצוע" },
     { value: "done", label: "הושלם" },
     { value: "archived", label: "ארכיון" },
   ];
@@ -173,6 +176,18 @@ export default function CreatePromptPage() {
                 }`}
               />
               {errors.content && <p className="text-error text-xs mt-1">{errors.content}</p>}
+            </div>
+
+            {/* Note */}
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1">הערה</label>
+              <textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="הערה אישית (אופציונלי)..."
+                rows={3}
+                className="w-full px-3 py-2.5 border border-gray-200 rounded-md text-sm text-right bg-background-surface placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors resize-none"
+              />
             </div>
 
             {/* Status */}

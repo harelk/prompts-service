@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { apiClient } from "../api/client";
 
-export type PromptStatus = "draft" | "active" | "done" | "archived";
+export type PromptStatus = "draft" | "active" | "in_progress" | "done" | "archived";
 
 export interface Service {
   id: string;
@@ -13,6 +13,7 @@ export interface Prompt {
   id: string;
   title: string;
   content: string;
+  note: string | null;
   rawTranscription: string | null;
   status: PromptStatus;
   createdAt: string;
@@ -95,6 +96,7 @@ export function usePrompt(id: string) {
 export async function createPrompt(data: {
   title: string;
   content: string;
+  note?: string;
   status?: PromptStatus;
   serviceIds?: string[];
   rawTranscription?: string;

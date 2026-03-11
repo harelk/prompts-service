@@ -12,6 +12,10 @@ const STATUS_CONFIG: Record<
     label: "ממתין לביצוע",
     className: "bg-status-active-bg text-status-active-text",
   },
+  in_progress: {
+    label: "בביצוע",
+    className: "bg-status-in_progress-bg text-status-in_progress-text",
+  },
   done: {
     label: "הושלם",
     className: "bg-status-done-bg text-status-done-text",

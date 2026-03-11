@@ -11,6 +11,7 @@ import {
 export const promptStatusEnum = pgEnum("prompt_status", [
   "draft",
   "active",
+  "in_progress",
   "done",
   "archived",
 ]);
@@ -21,6 +22,7 @@ export const prompts = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     title: varchar("title", { length: 500 }).notNull(),
     content: text("content").notNull(),
+    note: text("note"),
     rawTranscription: text("raw_transcription"),
     status: promptStatusEnum("status").notNull().default("draft"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

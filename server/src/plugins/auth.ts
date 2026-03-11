@@ -13,7 +13,7 @@ if (!JWT_SECRET) {
 const USERS = [
   {
     email: "kaplanharel@gmail.com",
-    passwordHash: hmacHash("jkhdfiekjeh38jd@hdj"),
+    passwordHash: hmacHash("jkhdfgkjhur864$jhk2"),
   },
   {
     email: "kaplanharel+dev@gmail.com",

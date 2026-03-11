@@ -26,6 +26,7 @@ export default function PromptDetailPage() {
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
+  const [editNote, setEditNote] = useState("");
   const [editStatus, setEditStatus] = useState<PromptStatus>("draft");
   const [editServiceIds, setEditServiceIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
@@ -38,6 +39,7 @@ export default function PromptDetailPage() {
     if (!prompt) return;
     setEditTitle(prompt.title);
     setEditContent(prompt.content);
+    setEditNote(prompt.note ?? "");
     setEditStatus(prompt.status);
     setEditServiceIds(prompt.services.map((s) => s.id));
     setEditErrors({});
@@ -63,6 +65,7 @@ export default function PromptDetailPage() {
       await updatePrompt({
         title: editTitle.trim(),
         content: editContent.trim(),
+        note: editNote.trim() || null,
         status: editStatus,
         serviceIds: editServiceIds,
       });
@@ -101,6 +104,7 @@ export default function PromptDetailPage() {
   const STATUS_OPTIONS: { value: PromptStatus; label: string }[] = [
     { value: "draft", label: "טיוטה" },
     { value: "active", label: "ממתין לביצוע" },
+    { value: "in_progress", label: "בביצוע" },
     { value: "done", label: "הושלם" },
     { value: "archived", label: "ארכיון" },
   ];
@@ -213,6 +217,17 @@ export default function PromptDetailPage() {
             </div>
 
             <div>
+              <label className="block text-sm font-medium text-text-primary mb-1">הערה</label>
+              <textarea
+                value={editNote}
+                onChange={(e) => setEditNote(e.target.value)}
+                placeholder="הערה אישית (אופציונלי)..."
+                rows={3}
+                className="w-full px-3 py-2.5 border border-gray-200 rounded-md text-sm text-right bg-background-surface placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors resize-none"
+              />
+            </div>
+
+            <div>
               <label className="block text-sm font-medium text-text-primary mb-1">סטטוס</label>
               <div className="relative">
                 <select
@@ -306,6 +321,16 @@ export default function PromptDetailPage() {
                 {prompt.content}
               </p>
             </div>
+
+            {/* Note */}
+            {prompt.note && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                <p className="text-xs font-medium text-amber-700 mb-1">הערה</p>
+                <p className="text-sm text-text-primary leading-relaxed whitespace-pre-wrap">
+                  {prompt.note}
+                </p>
+              </div>
+            )}
 
             {/* Updated at */}
             {prompt.updatedAt !== prompt.createdAt && (

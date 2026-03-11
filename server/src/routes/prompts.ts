@@ -4,7 +4,7 @@ import { prompts } from "../db/schema/prompts.js";
 import { services } from "../db/schema/services.js";
 import { promptServices } from "../db/schema/prompt-services.js";
 import { eq, inArray, sql, and, or, ilike } from "drizzle-orm";
-type PromptStatus = "draft" | "active" | "done" | "archived";
+type PromptStatus = "draft" | "active" | "in_progress" | "done" | "archived";
 
 type PromptsQuery = {
   status?: string;
@@ -14,6 +14,7 @@ type PromptsQuery = {
 type CreateBody = {
   title: string;
   content: string;
+  note?: string;
   status?: PromptStatus;
   serviceIds?: string[];
   rawTranscription?: string;
@@ -22,11 +23,12 @@ type CreateBody = {
 type UpdateBody = {
   title?: string;
   content?: string;
+  note?: string;
   status?: PromptStatus;
   serviceIds?: string[];
 };
 
-const VALID_STATUSES = new Set(["draft", "active", "done", "archived"]);
+const VALID_STATUSES = new Set(["draft", "active", "in_progress", "done", "archived"]);
 
 async function getPromptWithServices(promptId: string) {
   const [promptRow] = await db.select().from(prompts).where(eq(prompts.id, promptId));
@@ -42,6 +44,7 @@ async function getPromptWithServices(promptId: string) {
     id: promptRow.id,
     title: promptRow.title,
     content: promptRow.content,
+    note: promptRow.note,
     rawTranscription: promptRow.rawTranscription,
     status: promptRow.status,
     createdAt: promptRow.createdAt.toISOString(),
@@ -116,6 +119,7 @@ const promptsRoutes: FastifyPluginAsync = async (fastify) => {
       id: r.id,
       title: r.title,
       content: r.content,
+      note: r.note,
       rawTranscription: r.rawTranscription,
       status: r.status,
       createdAt: r.createdAt.toISOString(),
@@ -143,7 +147,7 @@ const promptsRoutes: FastifyPluginAsync = async (fastify) => {
 
   // POST /api/prompts
   fastify.post<{ Body: CreateBody }>("/api/prompts", async (request, reply) => {
-    const { title, content, status, serviceIds, rawTranscription } = request.body ?? {};
+    const { title, content, note, status, serviceIds, rawTranscription } = request.body ?? {};
 
     if (!title || typeof title !== "string" || title.trim().length === 0) {
       return reply.status(400).send({
@@ -167,6 +171,7 @@ const promptsRoutes: FastifyPluginAsync = async (fastify) => {
         .values({
           title: title.trim(),
           content: content.trim(),
+          note: note?.trim() ?? null,
           status: status ?? "draft",
           rawTranscription: rawTranscription ?? null,
         })
@@ -190,7 +195,7 @@ const promptsRoutes: FastifyPluginAsync = async (fastify) => {
     "/api/prompts/:id",
     async (request, reply) => {
       const { id } = request.params;
-      const { title, content, status, serviceIds } = request.body ?? {};
+      const { title, content, note, status, serviceIds } = request.body ?? {};
 
       const existing = await db.select().from(prompts).where(eq(prompts.id, id));
       if (existing.length === 0) {
@@ -210,6 +215,7 @@ const promptsRoutes: FastifyPluginAsync = async (fastify) => {
       };
       if (title !== undefined) updates.title = title.trim();
       if (content !== undefined) updates.content = content.trim();
+      if (note !== undefined) updates.note = note?.trim() ?? null;
       if (status !== undefined) updates.status = status;
 
       await db.transaction(async (tx) => {
