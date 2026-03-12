@@ -7,7 +7,7 @@ function getClient(): OpenAI {
     client = new OpenAI({
       apiKey: process.env.XAI_API_KEY,
       baseURL: "https://api.x.ai/v1",
-      timeout: 30_000,
+      timeout: 60_000,
       maxRetries: 1,
     });
   }
@@ -48,7 +48,7 @@ export async function cleanupTranscription(
 
   const response = await xai.chat.completions.create({
     model,
-    max_tokens: 2048,
+    max_tokens: 100_000,
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: `תמלול גולמי:\n${rawTranscription}` },
