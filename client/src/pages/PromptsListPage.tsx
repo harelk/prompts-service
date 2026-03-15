@@ -1,6 +1,6 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search, X } from "lucide-react";
+import { Plus, Search, X, ChevronDown } from "lucide-react";
 import Layout from "../components/Layout";
 import PromptCard from "../components/PromptCard";
 import { usePrompts } from "../hooks/usePrompts";
@@ -22,10 +22,38 @@ export default function PromptsListPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
   const [selectedServiceId, setSelectedServiceId] = useState<string | undefined>();
+  const [serviceDropdownOpen, setServiceDropdownOpen] = useState(false);
+  const [serviceSearch, setServiceSearch] = useState("");
+  const serviceDropdownRef = useRef<HTMLDivElement>(null);
   const [searchValue, setSearchValue] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { services } = useServices();
+
+  const filteredServices = useMemo(
+    () =>
+      serviceSearch
+        ? services.filter((s) => s.name.includes(serviceSearch))
+        : services,
+    [services, serviceSearch]
+  );
+
+  const selectedServiceName = useMemo(
+    () => services.find((s) => s.id === selectedServiceId)?.name,
+    [services, selectedServiceId]
+  );
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (serviceDropdownRef.current && !serviceDropdownRef.current.contains(e.target as Node)) {
+        setServiceDropdownOpen(false);
+        setServiceSearch("");
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
   // Clear the debounce timer on unmount to prevent state updates on unmounted component.
   useEffect(() => {
@@ -66,32 +94,69 @@ export default function PromptsListPage() {
           ))}
         </div>
 
-        {/* Service Filter */}
+        {/* Service Filter Dropdown */}
         {services.length > 0 && (
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+          <div className="relative" ref={serviceDropdownRef}>
             <button
-              onClick={() => setSelectedServiceId(undefined)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                !selectedServiceId
-                  ? "bg-primary text-white"
-                  : "bg-background-surface text-text-secondary border border-gray-200 hover:border-primary/30"
+              onClick={() => {
+                setServiceDropdownOpen((v) => !v);
+                setServiceSearch("");
+              }}
+              className={`w-full flex items-center justify-between px-3 py-2.5 border rounded-md text-sm text-right transition-colors ${
+                selectedServiceId
+                  ? "bg-primary/5 border-primary text-primary"
+                  : "bg-background-surface border-gray-200 text-text-secondary"
               }`}
             >
-              כל הסרוויסים
+              <ChevronDown size={16} className="text-text-tertiary" />
+              <span>{selectedServiceName ?? "כל הסרוויסים"}</span>
             </button>
-            {services.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => setSelectedServiceId(selectedServiceId === s.id ? undefined : s.id)}
-                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                  selectedServiceId === s.id
-                    ? "bg-primary text-white"
-                    : "bg-background-surface text-text-secondary border border-gray-200 hover:border-primary/30"
-                }`}
-              >
-                {s.name}
-              </button>
-            ))}
+            {serviceDropdownOpen && (
+              <div className="absolute z-20 top-full mt-1 w-full bg-background-surface border border-gray-200 rounded-md shadow-lg max-h-60 overflow-hidden">
+                <div className="p-2 border-b border-gray-100">
+                  <input
+                    type="text"
+                    value={serviceSearch}
+                    onChange={(e) => setServiceSearch(e.target.value)}
+                    placeholder="חיפוש סרוויס..."
+                    autoFocus
+                    className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm text-right placeholder-text-tertiary focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary"
+                  />
+                </div>
+                <div className="overflow-y-auto max-h-48">
+                  <button
+                    onClick={() => {
+                      setSelectedServiceId(undefined);
+                      setServiceDropdownOpen(false);
+                      setServiceSearch("");
+                    }}
+                    className={`w-full text-right px-3 py-2 text-sm hover:bg-gray-50 transition-colors ${
+                      !selectedServiceId ? "text-primary font-medium" : "text-text-primary"
+                    }`}
+                  >
+                    כל הסרוויסים
+                  </button>
+                  {filteredServices.map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => {
+                        setSelectedServiceId(s.id);
+                        setServiceDropdownOpen(false);
+                        setServiceSearch("");
+                      }}
+                      className={`w-full text-right px-3 py-2 text-sm hover:bg-gray-50 transition-colors ${
+                        selectedServiceId === s.id ? "text-primary font-medium" : "text-text-primary"
+                      }`}
+                    >
+                      {s.name}
+                    </button>
+                  ))}
+                  {filteredServices.length === 0 && (
+                    <p className="px-3 py-2 text-sm text-text-tertiary">לא נמצאו סרוויסים</p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
