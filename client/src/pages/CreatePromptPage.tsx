@@ -239,18 +239,6 @@ export default function CreatePromptPage() {
               </div>
             )}
 
-            {/* Raw Transcription (if from voice) */}
-            {rawTranscription && (
-              <details className="bg-gray-50 rounded-md border border-gray-200">
-                <summary className="px-3 py-2 text-sm text-text-secondary cursor-pointer select-none">
-                  תמלול גולמי
-                </summary>
-                <p className="px-3 pb-3 text-sm text-text-tertiary leading-relaxed whitespace-pre-wrap">
-                  {rawTranscription}
-                </p>
-              </details>
-            )}
-
             {errors.general && (
               <p className="text-error text-sm">{errors.general}</p>
             )}
@@ -262,6 +250,16 @@ export default function CreatePromptPage() {
             >
               {saving ? "שומר..." : "שמור פרומפט"}
             </button>
+
+            {/* Raw Transcription — debug panel */}
+            {rawTranscription && (
+              <div className="bg-gray-900 rounded-md border border-gray-700 p-3">
+                <p className="text-xs font-semibold text-gray-400 mb-2">תמלול גולמי</p>
+                <pre className="text-sm text-gray-200 leading-relaxed whitespace-pre-wrap font-mono">
+                  {rawTranscription}
+                </pre>
+              </div>
+            )}
           </div>
         )}
       </div>
