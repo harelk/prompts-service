@@ -34,7 +34,7 @@ export default function Layout({
       )}
 
       {/* Content */}
-      <main className={`flex-1 max-w-[480px] w-full mx-auto ${hideNav ? "pb-4" : "pb-safe"}`}>
+      <main className={`flex-1 max-w-[480px] md:max-w-3xl lg:max-w-5xl w-full mx-auto ${hideNav ? "pb-4" : "pb-safe"}`}>
         {children}
       </main>
 
