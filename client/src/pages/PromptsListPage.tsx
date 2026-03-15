@@ -4,6 +4,7 @@ import { Plus, Search, X } from "lucide-react";
 import Layout from "../components/Layout";
 import PromptCard from "../components/PromptCard";
 import { usePrompts } from "../hooks/usePrompts";
+import { useServices } from "../hooks/useServices";
 import type { PromptStatus } from "../hooks/usePrompts";
 
 type FilterTab = "all" | PromptStatus;
@@ -20,9 +21,11 @@ const TABS: { key: FilterTab; label: string }[] = [
 export default function PromptsListPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
+  const [selectedServiceId, setSelectedServiceId] = useState<string | undefined>();
   const [searchValue, setSearchValue] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { services } = useServices();
 
   // Clear the debounce timer on unmount to prevent state updates on unmounted component.
   useEffect(() => {
@@ -40,6 +43,7 @@ export default function PromptsListPage() {
   const { prompts, loading, error, reload } = usePrompts({
     status: activeTab === "all" ? undefined : activeTab,
     search: debouncedSearch || undefined,
+    serviceId: selectedServiceId,
   });
 
   return (
@@ -61,6 +65,35 @@ export default function PromptsListPage() {
             </button>
           ))}
         </div>
+
+        {/* Service Filter */}
+        {services.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+            <button
+              onClick={() => setSelectedServiceId(undefined)}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                !selectedServiceId
+                  ? "bg-primary text-white"
+                  : "bg-background-surface text-text-secondary border border-gray-200 hover:border-primary/30"
+              }`}
+            >
+              כל הסרוויסים
+            </button>
+            {services.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => setSelectedServiceId(selectedServiceId === s.id ? undefined : s.id)}
+                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  selectedServiceId === s.id
+                    ? "bg-primary text-white"
+                    : "bg-background-surface text-text-secondary border border-gray-200 hover:border-primary/30"
+                }`}
+              >
+                {s.name}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Search */}
         <div className="relative">

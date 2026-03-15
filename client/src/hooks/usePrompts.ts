@@ -24,6 +24,7 @@ export interface Prompt {
 export interface PromptsFilter {
   status?: string;
   search?: string;
+  serviceId?: string;
 }
 
 export function usePrompts(filter: PromptsFilter = {}) {
@@ -38,6 +39,7 @@ export function usePrompts(filter: PromptsFilter = {}) {
       const params = new URLSearchParams();
       if (filter.status) params.set("status", filter.status);
       if (filter.search) params.set("search", filter.search);
+      if (filter.serviceId) params.set("serviceId", filter.serviceId);
       const query = params.toString() ? `?${params.toString()}` : "";
       const data = await apiClient.get<Prompt[]>(`/api/prompts${query}`);
       setPrompts(data);
@@ -46,7 +48,7 @@ export function usePrompts(filter: PromptsFilter = {}) {
     } finally {
       setLoading(false);
     }
-  }, [filter.status, filter.search]);
+  }, [filter.status, filter.search, filter.serviceId]);
 
   useEffect(() => {
     load();

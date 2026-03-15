@@ -9,6 +9,7 @@ type PromptStatus = "draft" | "active" | "in_progress" | "done" | "archived";
 type PromptsQuery = {
   status?: string;
   search?: string;
+  serviceId?: string;
 };
 
 type CreateBody = {
@@ -60,7 +61,7 @@ async function getPromptWithServices(promptId: string) {
 const promptsRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /api/prompts
   fastify.get<{ Querystring: PromptsQuery }>("/api/prompts", async (request, reply) => {
-    const { status, search } = request.query;
+    const { status, search, serviceId } = request.query;
 
     // Build conditions
     const conditions = [];
@@ -77,6 +78,20 @@ const promptsRoutes: FastifyPluginAsync = async (fastify) => {
       conditions.push(
         or(ilike(prompts.title, term), ilike(prompts.content, term))
       );
+    }
+
+    // Filter by service: find prompt IDs linked to this service
+    let servicePromptIds: string[] | null = null;
+    if (serviceId && serviceId.trim().length > 0) {
+      const linked = await db
+        .select({ promptId: promptServices.promptId })
+        .from(promptServices)
+        .where(eq(promptServices.serviceId, serviceId.trim()));
+      servicePromptIds = linked.map((r) => r.promptId);
+      if (servicePromptIds.length === 0) {
+        return reply.send([]);
+      }
+      conditions.push(inArray(prompts.id, servicePromptIds));
     }
 
     const rows =
