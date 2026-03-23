@@ -3,8 +3,11 @@ import { Mic, Square, RotateCcw, Upload } from "lucide-react";
 import { apiClient } from "../api/client";
 
 interface VoiceRecorderProps {
-  onResult: (result: { rawTranscription: string; cleanedText: string; suggestedTitle: string; suggestedServiceIds: string[]; audioFilename: string }) => void;
+  onResult?: (result: { rawTranscription: string; cleanedText: string; suggestedTitle: string; suggestedServiceIds: string[]; audioFilename: string }) => void;
+  onAudioReady?: (blob: Blob) => void;
   onError: (message: string) => void;
+  submitLabel?: string;
+  transcribingLabel?: string;
 }
 
 type RecorderState = "idle" | "recording" | "stopped" | "transcribing";
@@ -15,7 +18,7 @@ function formatDuration(seconds: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-export default function VoiceRecorder({ onResult, onError }: VoiceRecorderProps) {
+export default function VoiceRecorder({ onResult, onAudioReady, onError, submitLabel, transcribingLabel }: VoiceRecorderProps) {
   const [state, setState] = useState<RecorderState>("idle");
   const [duration, setDuration] = useState(0);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
@@ -109,6 +112,12 @@ export default function VoiceRecorder({ onResult, onError }: VoiceRecorderProps)
   const transcribe = useCallback(async () => {
     if (!audioBlob) return;
 
+    if (onAudioReady) {
+      onAudioReady(audioBlob);
+      reset();
+      return;
+    }
+
     setState("transcribing");
     try {
       const formData = new FormData();
@@ -122,13 +131,13 @@ export default function VoiceRecorder({ onResult, onError }: VoiceRecorderProps)
         audioFilename: string;
       }>("/api/voice/transcribe", formData);
 
-      onResult(result);
+      onResult!(result);
       reset();
     } catch (err) {
       setState("stopped");
       onError(err instanceof Error ? err.message : "התמלול נכשל. אנא נסה שנית.");
     }
-  }, [audioBlob, onResult, onError, reset]);
+  }, [audioBlob, onResult, onAudioReady, onError, reset]);
 
   return (
     <div className="flex flex-col items-center gap-6 py-4">
@@ -184,7 +193,7 @@ export default function VoiceRecorder({ onResult, onError }: VoiceRecorderProps)
               className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-md hover:bg-primary-hover active:bg-primary-pressed transition-colors text-sm font-medium"
             >
               <Upload size={16} />
-              תמלל
+              {submitLabel ?? "תמלל"}
             </button>
           </div>
         </>
@@ -193,7 +202,7 @@ export default function VoiceRecorder({ onResult, onError }: VoiceRecorderProps)
       {state === "transcribing" && (
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-          <p className="text-text-secondary text-sm">מתמלל ומעבד את ההקלטה...</p>
+          <p className="text-text-secondary text-sm">{transcribingLabel ?? "מתמלל ומעבד את ההקלטה..."}</p>
         </div>
       )}
     </div>

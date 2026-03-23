@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronRight, Edit2, Check, X, Trash2, Copy, CheckCheck, ChevronDown, RefreshCw } from "lucide-react";
+import { ChevronRight, Edit2, Check, X, Trash2, Copy, CheckCheck, ChevronDown, RefreshCw, Mic } from "lucide-react";
 import Layout from "../components/Layout";
 import StatusBadge from "../components/StatusBadge";
+import VoiceRecorder from "../components/VoiceRecorder";
 import { usePrompt } from "../hooks/usePrompts";
 import { useServices } from "../hooks/useServices";
 import { apiClient } from "../api/client";
@@ -37,6 +38,9 @@ export default function PromptDetailPage() {
   const [editErrors, setEditErrors] = useState<Record<string, string>>({});
   const [retranscribing, setRetranscribing] = useState(false);
   const [retranscribeError, setRetranscribeError] = useState<string | null>(null);
+  const [voiceEditing, setVoiceEditing] = useState(false);
+  const [voiceEditProcessing, setVoiceEditProcessing] = useState(false);
+  const [voiceEditError, setVoiceEditError] = useState<string | null>(null);
 
   const startEdit = () => {
     if (!prompt) return;
@@ -393,6 +397,65 @@ export default function PromptDetailPage() {
                 </button>
                 {retranscribeError && (
                   <p className="text-error text-sm">{retranscribeError}</p>
+                )}
+              </div>
+            )}
+
+            {/* Voice Edit */}
+            {!voiceEditing ? (
+              <button
+                onClick={() => {
+                  setVoiceEditing(true);
+                  setVoiceEditError(null);
+                }}
+                className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-md text-sm text-text-secondary hover:border-primary/40 hover:text-primary transition-colors"
+              >
+                <Mic size={16} />
+                ערוך בהקלטה
+              </button>
+            ) : (
+              <div className="bg-background-surface rounded-lg p-4 border border-gray-100 space-y-2">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs font-medium text-text-secondary">עריכה קולית</p>
+                  <button
+                    onClick={() => {
+                      setVoiceEditing(false);
+                      setVoiceEditError(null);
+                    }}
+                    className="text-text-tertiary hover:text-text-secondary p-0.5 rounded"
+                    aria-label="סגור"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+                <VoiceRecorder
+                  onAudioReady={async (blob) => {
+                    setVoiceEditProcessing(true);
+                    setVoiceEditError(null);
+                    try {
+                      const formData = new FormData();
+                      formData.append("audio", blob, "recording.webm");
+                      await apiClient.postFormData(`/api/prompts/${prompt.id}/voice-edit`, formData);
+                      await reload();
+                      setVoiceEditing(false);
+                    } catch (err) {
+                      setVoiceEditError(err instanceof Error ? err.message : "עריכה קולית נכשלה");
+                    } finally {
+                      setVoiceEditProcessing(false);
+                    }
+                  }}
+                  onError={(msg) => setVoiceEditError(msg)}
+                  submitLabel="ערוך"
+                  transcribingLabel="מעבד עריכה..."
+                />
+                {voiceEditProcessing && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    <span className="text-sm text-text-secondary">מעבד עריכה קולית...</span>
+                  </div>
+                )}
+                {voiceEditError && (
+                  <p className="text-error text-sm mt-1">{voiceEditError}</p>
                 )}
               </div>
             )}

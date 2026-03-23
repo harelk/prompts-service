@@ -79,3 +79,75 @@ export async function cleanupTranscription(
 
   return parsed;
 }
+
+export interface VoiceEditResult {
+  updatedContent: string;
+  updatedTitle: string;
+  suggestedServiceNames: string[];
+}
+
+export async function applyVoiceEdit(
+  currentTitle: string,
+  currentContent: string,
+  editInstructions: string,
+  serviceNames: string[] = []
+): Promise<VoiceEditResult> {
+  const xai = getClient();
+  const model = process.env.XAI_MODEL ?? "grok-3";
+
+  const serviceNamesBlock = serviceNames.length > 0
+    ? `\n\nשמות סרוויסים מוכרים (אל תשנה אותם):\n${serviceNames.join(", ")}`
+    : "";
+
+  const systemPrompt = `אתה עוזר לעריכת פרומפטים ל-AI. קיבלת פרומפט קיים והוראות עריכה שהוקלטו בקול על ידי המשתמש.
+
+פרומפט קיים:
+כותרת: ${currentTitle}
+תוכן:
+${currentContent}
+
+משימתך:
+1. יישם את שינויי העריכה שביקש המשתמש על הפרומפט.
+2. אם המשתמש ביקש לשנות את הכותרת — עדכן אותה; אחרת, השאר את הכותרת המקורית.
+3. שמור על כל מה שהמשתמש לא ביקש לשנות.
+4. אם מוזכרים סרוויסים מהרשימה — החזר את שמותיהם המדויקים ב-suggestedServiceNames. החזר מערך ריק אם לא מוזכר אף סרוויס.${serviceNamesBlock}
+
+החזר תגובה **רק** בפורמט JSON הבא, ללא טקסט נוסף:
+{
+  "updatedContent": "...",
+  "updatedTitle": "...",
+  "suggestedServiceNames": ["..."]
+}`;
+
+  const response = await xai.chat.completions.create({
+    model,
+    max_tokens: 100_000,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: `הוראות עריכה:\n${editInstructions}` },
+    ],
+  });
+
+  const textContent = response.choices[0]?.message?.content;
+  if (!textContent) {
+    throw new Error("No text content in xAI response");
+  }
+
+  let parsed: VoiceEditResult;
+  try {
+    const raw = textContent.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
+    parsed = JSON.parse(raw) as VoiceEditResult;
+  } catch {
+    throw new Error("xAI returned invalid JSON");
+  }
+
+  if (!parsed.updatedContent || !parsed.updatedTitle) {
+    throw new Error("xAI response missing required fields");
+  }
+
+  if (!Array.isArray(parsed.suggestedServiceNames)) {
+    parsed.suggestedServiceNames = [];
+  }
+
+  return parsed;
+}
