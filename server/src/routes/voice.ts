@@ -1,4 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
+import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 import { validateMimeType, transcribeAudio } from "../services/whisper.js";
