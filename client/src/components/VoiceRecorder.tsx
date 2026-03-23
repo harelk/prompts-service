@@ -75,7 +75,7 @@ export default function VoiceRecorder({ onResult, onError }: VoiceRecorderProps)
         streamRef.current = null;
       };
 
-      recorder.start(250); // collect chunks every 250ms
+      recorder.start(); // single chunk — avoids WebM cluster header issues that truncate playback
       setState("recording");
       setDuration(0);
 
