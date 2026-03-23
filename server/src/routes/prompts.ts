@@ -19,6 +19,7 @@ type CreateBody = {
   status?: PromptStatus;
   serviceIds?: string[];
   rawTranscription?: string;
+  audioFilename?: string;
 };
 
 type UpdateBody = {
@@ -47,6 +48,7 @@ async function getPromptWithServices(promptId: string) {
     content: promptRow.content,
     note: promptRow.note,
     rawTranscription: promptRow.rawTranscription,
+    audioFilename: promptRow.audioFilename ?? null,
     status: promptRow.status,
     createdAt: promptRow.createdAt.toISOString(),
     updatedAt: promptRow.updatedAt.toISOString(),
@@ -136,6 +138,7 @@ const promptsRoutes: FastifyPluginAsync = async (fastify) => {
       content: r.content,
       note: r.note,
       rawTranscription: r.rawTranscription,
+      audioFilename: r.audioFilename ?? null,
       status: r.status,
       createdAt: r.createdAt.toISOString(),
       updatedAt: r.updatedAt.toISOString(),
@@ -162,7 +165,7 @@ const promptsRoutes: FastifyPluginAsync = async (fastify) => {
 
   // POST /api/prompts
   fastify.post<{ Body: CreateBody }>("/api/prompts", async (request, reply) => {
-    const { title, content, note, status, serviceIds, rawTranscription } = request.body ?? {};
+    const { title, content, note, status, serviceIds, rawTranscription, audioFilename } = request.body ?? {};
 
     if (!title || typeof title !== "string" || title.trim().length === 0) {
       return reply.status(400).send({
@@ -189,6 +192,7 @@ const promptsRoutes: FastifyPluginAsync = async (fastify) => {
           note: note?.trim() ?? null,
           status: status ?? "draft",
           rawTranscription: rawTranscription ?? null,
+          audioFilename: audioFilename ?? null,
         })
         .returning();
 

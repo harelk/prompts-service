@@ -24,6 +24,7 @@ export const prompts = pgTable(
     content: text("content").notNull(),
     note: text("note"),
     rawTranscription: text("raw_transcription"),
+    audioFilename: varchar("audio_filename", { length: 255 }),
     status: promptStatusEnum("status").notNull().default("draft"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

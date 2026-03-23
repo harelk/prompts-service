@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronRight, Edit2, Check, X, Trash2, Copy, CheckCheck, ChevronDown } from "lucide-react";
+import { ChevronRight, Edit2, Check, X, Trash2, Copy, CheckCheck, ChevronDown, RefreshCw } from "lucide-react";
 import Layout from "../components/Layout";
 import StatusBadge from "../components/StatusBadge";
 import { usePrompt } from "../hooks/usePrompts";
 import { useServices } from "../hooks/useServices";
+import { apiClient } from "../api/client";
 import type { PromptStatus } from "../hooks/usePrompts";
 
 function formatDate(isoString: string): string {
@@ -20,7 +21,7 @@ function formatDate(isoString: string): string {
 export default function PromptDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { prompt, loading, error, updatePrompt, deletePrompt } = usePrompt(id!);
+  const { prompt, loading, error, reload, updatePrompt, deletePrompt } = usePrompt(id!);
   const { services } = useServices();
 
   const [editing, setEditing] = useState(false);
@@ -34,6 +35,8 @@ export default function PromptDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [editErrors, setEditErrors] = useState<Record<string, string>>({});
+  const [retranscribing, setRetranscribing] = useState(false);
+  const [retranscribeError, setRetranscribeError] = useState<string | null>(null);
 
   const startEdit = () => {
     if (!prompt) return;
@@ -93,6 +96,26 @@ export default function PromptDetailPage() {
     await navigator.clipboard.writeText(prompt.content);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleRetranscribe = async () => {
+    if (!prompt) return;
+    setRetranscribing(true);
+    setRetranscribeError(null);
+    try {
+      await apiClient.post<{
+        rawTranscription: string;
+        cleanedText: string;
+        suggestedTitle: string;
+        suggestedServiceIds: string[];
+      }>(`/api/prompts/${prompt.id}/retranscribe`, {});
+      // Reload to reflect the updated content written by the server
+      await reload();
+    } catch (err) {
+      setRetranscribeError(err instanceof Error ? err.message : "תמלול מחדש נכשל");
+    } finally {
+      setRetranscribing(false);
+    }
   };
 
   const toggleService = (sid: string) => {
@@ -349,6 +372,29 @@ export default function PromptDetailPage() {
                   {prompt.rawTranscription}
                 </p>
               </details>
+            )}
+
+            {/* Audio Player + Re-transcribe */}
+            {prompt.audioFilename && (
+              <div className="bg-background-surface border border-gray-100 rounded-lg p-4 space-y-3">
+                <p className="text-xs font-medium text-text-secondary">הקלטה שמורה</p>
+                <audio
+                  src={`/api/audio/${prompt.audioFilename}`}
+                  controls
+                  className="w-full rounded-md"
+                />
+                <button
+                  onClick={handleRetranscribe}
+                  disabled={retranscribing}
+                  className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-md text-sm font-medium hover:bg-primary-hover active:bg-primary-pressed disabled:opacity-50 transition-colors"
+                >
+                  <RefreshCw size={15} className={retranscribing ? "animate-spin" : ""} />
+                  {retranscribing ? "מתמלל..." : "תמלל מחדש"}
+                </button>
+                {retranscribeError && (
+                  <p className="text-error text-sm">{retranscribeError}</p>
+                )}
+              </div>
             )}
 
             {/* Delete Button */}

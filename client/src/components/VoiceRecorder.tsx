@@ -3,7 +3,7 @@ import { Mic, Square, RotateCcw, Upload } from "lucide-react";
 import { apiClient } from "../api/client";
 
 interface VoiceRecorderProps {
-  onResult: (result: { rawTranscription: string; cleanedText: string; suggestedTitle: string; suggestedServiceIds: string[] }) => void;
+  onResult: (result: { rawTranscription: string; cleanedText: string; suggestedTitle: string; suggestedServiceIds: string[]; audioFilename: string }) => void;
   onError: (message: string) => void;
 }
 
@@ -119,6 +119,7 @@ export default function VoiceRecorder({ onResult, onError }: VoiceRecorderProps)
         cleanedText: string;
         suggestedTitle: string;
         suggestedServiceIds: string[];
+        audioFilename: string;
       }>("/api/voice/transcribe", formData);
 
       onResult(result);

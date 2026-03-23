@@ -107,8 +107,12 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
 
   // Auth hook for all other routes
   fastify.addHook("onRequest", async (request, reply) => {
-    // Skip health and login endpoints
-    if (request.url === "/api/health" || request.url === "/api/auth/login") return;
+    // Skip health, login, and audio file serving (audio element can't send auth headers)
+    if (
+      request.url === "/api/health" ||
+      request.url === "/api/auth/login" ||
+      request.url.startsWith("/api/audio/")
+    ) return;
 
     const authHeader = request.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {

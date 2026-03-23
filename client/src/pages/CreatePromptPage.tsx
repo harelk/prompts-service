@@ -17,6 +17,7 @@ export default function CreatePromptPage() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [rawTranscription, setRawTranscription] = useState<string | undefined>();
+  const [audioFilename, setAudioFilename] = useState<string | undefined>();
   const [status, setStatus] = useState<PromptStatus>("draft");
   const [note, setNote] = useState("");
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
@@ -44,6 +45,7 @@ export default function CreatePromptPage() {
         status,
         serviceIds: selectedServiceIds,
         rawTranscription,
+        audioFilename,
       });
       navigate(`/prompts/${prompt.id}`, { replace: true });
     } catch (err) {
@@ -57,10 +59,12 @@ export default function CreatePromptPage() {
     cleanedText: string;
     suggestedTitle: string;
     suggestedServiceIds: string[];
+    audioFilename: string;
   }) => {
     setContent(result.cleanedText);
     setTitle(result.suggestedTitle);
     setRawTranscription(result.rawTranscription);
+    setAudioFilename(result.audioFilename);
     if (result.suggestedServiceIds?.length > 0) {
       setSelectedServiceIds(result.suggestedServiceIds);
     }

@@ -15,6 +15,7 @@ export interface Prompt {
   content: string;
   note: string | null;
   rawTranscription: string | null;
+  audioFilename: string | null;
   status: PromptStatus;
   createdAt: string;
   updatedAt: string;
@@ -102,6 +103,7 @@ export async function createPrompt(data: {
   status?: PromptStatus;
   serviceIds?: string[];
   rawTranscription?: string;
+  audioFilename?: string;
 }): Promise<Prompt> {
   return apiClient.post<Prompt>("/api/prompts", data);
 }
