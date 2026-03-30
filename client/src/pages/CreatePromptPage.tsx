@@ -5,7 +5,7 @@ import Layout from "../components/Layout";
 import VoiceRecorder from "../components/VoiceRecorder";
 import { useServices } from "../hooks/useServices";
 import { createPrompt } from "../hooks/usePrompts";
-import type { PromptStatus } from "../hooks/usePrompts";
+import type { PromptStatus, PromptOwner } from "../hooks/usePrompts";
 
 type InputMode = "type" | "record";
 
@@ -19,6 +19,7 @@ export default function CreatePromptPage() {
   const [rawTranscription, setRawTranscription] = useState<string | undefined>();
   const [audioFilename, setAudioFilename] = useState<string | undefined>();
   const [status, setStatus] = useState<PromptStatus>("draft");
+  const [owner, setOwner] = useState<PromptOwner>("claude");
   const [note, setNote] = useState("");
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
@@ -43,6 +44,7 @@ export default function CreatePromptPage() {
         content: content.trim(),
         note: note.trim() || undefined,
         status,
+        owner,
         serviceIds: selectedServiceIds,
         rawTranscription,
         audioFilename,
@@ -84,6 +86,13 @@ export default function CreatePromptPage() {
     { value: "in_progress", label: "בביצוע" },
     { value: "done", label: "הושלם" },
     { value: "archived", label: "ארכיון" },
+  ];
+
+  const OWNER_OPTIONS: { value: PromptOwner; label: string }[] = [
+    { value: "raout", label: "רעות" },
+    { value: "harel", label: "הראל" },
+    { value: "dvora", label: "דבורה" },
+    { value: "claude", label: "קלאוד" },
   ];
 
   return (
@@ -208,6 +217,28 @@ export default function CreatePromptPage() {
                   className="w-full px-3 py-2.5 border border-gray-200 rounded-md text-sm text-right bg-background-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors appearance-none"
                 >
                   {STATUS_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown
+                  size={16}
+                  className="absolute top-1/2 -translate-y-1/2 start-3 text-text-tertiary pointer-events-none"
+                />
+              </div>
+            </div>
+
+            {/* Owner */}
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1">בעלים</label>
+              <div className="relative">
+                <select
+                  value={owner}
+                  onChange={(e) => setOwner(e.target.value as PromptOwner)}
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-md text-sm text-right bg-background-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors appearance-none"
+                >
+                  {OWNER_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>
                       {opt.label}
                     </option>

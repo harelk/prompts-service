@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { apiClient } from "../api/client";
 
 export type PromptStatus = "draft" | "active" | "in_progress" | "done" | "archived";
+export type PromptOwner = "raout" | "harel" | "dvora" | "claude";
 
 export interface Service {
   id: string;
@@ -17,6 +18,7 @@ export interface Prompt {
   rawTranscription: string | null;
   audioFilename: string | null;
   status: PromptStatus;
+  owner: PromptOwner;
   createdAt: string;
   updatedAt: string;
   services: Service[];
@@ -24,6 +26,7 @@ export interface Prompt {
 
 export interface PromptsFilter {
   status?: string;
+  owner?: string;
   search?: string;
   serviceId?: string;
 }
@@ -39,6 +42,7 @@ export function usePrompts(filter: PromptsFilter = {}) {
     try {
       const params = new URLSearchParams();
       if (filter.status) params.set("status", filter.status);
+      if (filter.owner) params.set("owner", filter.owner);
       if (filter.search) params.set("search", filter.search);
       if (filter.serviceId) params.set("serviceId", filter.serviceId);
       const query = params.toString() ? `?${params.toString()}` : "";
@@ -49,7 +53,7 @@ export function usePrompts(filter: PromptsFilter = {}) {
     } finally {
       setLoading(false);
     }
-  }, [filter.status, filter.search, filter.serviceId]);
+  }, [filter.status, filter.owner, filter.search, filter.serviceId]);
 
   useEffect(() => {
     load();
@@ -101,6 +105,7 @@ export async function createPrompt(data: {
   content: string;
   note?: string;
   status?: PromptStatus;
+  owner?: PromptOwner;
   serviceIds?: string[];
   rawTranscription?: string;
   audioFilename?: string;

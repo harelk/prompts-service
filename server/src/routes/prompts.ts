@@ -5,9 +5,11 @@ import { services } from "../db/schema/services.js";
 import { promptServices } from "../db/schema/prompt-services.js";
 import { eq, inArray, sql, and, or, ilike } from "drizzle-orm";
 type PromptStatus = "draft" | "active" | "in_progress" | "done" | "archived";
+type PromptOwner = "raout" | "harel" | "dvora" | "claude";
 
 type PromptsQuery = {
   status?: string;
+  owner?: string;
   search?: string;
   serviceId?: string;
 };
@@ -17,6 +19,7 @@ type CreateBody = {
   content: string;
   note?: string;
   status?: PromptStatus;
+  owner?: PromptOwner;
   serviceIds?: string[];
   rawTranscription?: string;
   audioFilename?: string;
@@ -27,10 +30,12 @@ type UpdateBody = {
   content?: string;
   note?: string;
   status?: PromptStatus;
+  owner?: PromptOwner;
   serviceIds?: string[];
 };
 
 const VALID_STATUSES = new Set(["draft", "active", "in_progress", "done", "archived"]);
+const VALID_OWNERS = new Set(["raout", "harel", "dvora", "claude"]);
 
 async function getPromptWithServices(promptId: string) {
   const [promptRow] = await db.select().from(prompts).where(eq(prompts.id, promptId));
@@ -50,6 +55,7 @@ async function getPromptWithServices(promptId: string) {
     rawTranscription: promptRow.rawTranscription,
     audioFilename: promptRow.audioFilename ?? null,
     status: promptRow.status,
+    owner: promptRow.owner,
     createdAt: promptRow.createdAt.toISOString(),
     updatedAt: promptRow.updatedAt.toISOString(),
     services: serviceRows.map((s) => ({
@@ -63,7 +69,7 @@ async function getPromptWithServices(promptId: string) {
 const promptsRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /api/prompts
   fastify.get<{ Querystring: PromptsQuery }>("/api/prompts", async (request, reply) => {
-    const { status, search, serviceId } = request.query;
+    const { status, owner, search, serviceId } = request.query;
 
     // Build conditions
     const conditions = [];
@@ -72,6 +78,13 @@ const promptsRoutes: FastifyPluginAsync = async (fastify) => {
       const statuses = status.split(",").filter((s) => VALID_STATUSES.has(s)) as PromptStatus[];
       if (statuses.length > 0) {
         conditions.push(inArray(prompts.status, statuses));
+      }
+    }
+
+    if (owner) {
+      const owners = owner.split(",").filter((o) => VALID_OWNERS.has(o)) as PromptOwner[];
+      if (owners.length > 0) {
+        conditions.push(inArray(prompts.owner, owners));
       }
     }
 
@@ -140,6 +153,7 @@ const promptsRoutes: FastifyPluginAsync = async (fastify) => {
       rawTranscription: r.rawTranscription,
       audioFilename: r.audioFilename ?? null,
       status: r.status,
+      owner: r.owner,
       createdAt: r.createdAt.toISOString(),
       updatedAt: r.updatedAt.toISOString(),
       services: (servicesByPrompt.get(r.id) ?? []).map((s) => ({
@@ -165,7 +179,7 @@ const promptsRoutes: FastifyPluginAsync = async (fastify) => {
 
   // POST /api/prompts
   fastify.post<{ Body: CreateBody }>("/api/prompts", async (request, reply) => {
-    const { title, content, note, status, serviceIds, rawTranscription, audioFilename } = request.body ?? {};
+    const { title, content, note, status, owner, serviceIds, rawTranscription, audioFilename } = request.body ?? {};
 
     if (!title || typeof title !== "string" || title.trim().length === 0) {
       return reply.status(400).send({
@@ -182,6 +196,11 @@ const promptsRoutes: FastifyPluginAsync = async (fastify) => {
         error: { code: "VALIDATION_ERROR", message: "invalid status", statusCode: 400 },
       });
     }
+    if (owner && !VALID_OWNERS.has(owner)) {
+      return reply.status(400).send({
+        error: { code: "VALIDATION_ERROR", message: "invalid owner", statusCode: 400 },
+      });
+    }
 
     const row = await db.transaction(async (tx) => {
       const [inserted] = await tx
@@ -191,6 +210,7 @@ const promptsRoutes: FastifyPluginAsync = async (fastify) => {
           content: content.trim(),
           note: note?.trim() ?? null,
           status: status ?? "draft",
+          owner: owner ?? "claude",
           rawTranscription: rawTranscription ?? null,
           audioFilename: audioFilename ?? null,
         })
@@ -214,7 +234,7 @@ const promptsRoutes: FastifyPluginAsync = async (fastify) => {
     "/api/prompts/:id",
     async (request, reply) => {
       const { id } = request.params;
-      const { title, content, note, status, serviceIds } = request.body ?? {};
+      const { title, content, note, status, owner, serviceIds } = request.body ?? {};
 
       const existing = await db.select().from(prompts).where(eq(prompts.id, id));
       if (existing.length === 0) {
@@ -228,6 +248,11 @@ const promptsRoutes: FastifyPluginAsync = async (fastify) => {
           error: { code: "VALIDATION_ERROR", message: "invalid status", statusCode: 400 },
         });
       }
+      if (owner && !VALID_OWNERS.has(owner)) {
+        return reply.status(400).send({
+          error: { code: "VALIDATION_ERROR", message: "invalid owner", statusCode: 400 },
+        });
+      }
 
       const updates: Partial<typeof prompts.$inferInsert> = {
         updatedAt: new Date(),
@@ -236,6 +261,7 @@ const promptsRoutes: FastifyPluginAsync = async (fastify) => {
       if (content !== undefined) updates.content = content.trim();
       if (note !== undefined) updates.note = note?.trim() ?? null;
       if (status !== undefined) updates.status = status;
+      if (owner !== undefined) updates.owner = owner;
 
       await db.transaction(async (tx) => {
         await tx.update(prompts).set(updates).where(eq(prompts.id, id));

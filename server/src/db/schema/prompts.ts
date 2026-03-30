@@ -16,6 +16,8 @@ export const promptStatusEnum = pgEnum("prompt_status", [
   "archived",
 ]);
 
+export const promptOwnerEnum = pgEnum("prompt_owner", ["raout", "harel", "dvora", "claude"]);
+
 export const prompts = pgTable(
   "prompts",
   {
@@ -26,11 +28,13 @@ export const prompts = pgTable(
     rawTranscription: text("raw_transcription"),
     audioFilename: varchar("audio_filename", { length: 255 }),
     status: promptStatusEnum("status").notNull().default("draft"),
+    owner: promptOwnerEnum("owner").notNull().default("claude"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => ({
     statusIdx: index("prompts_status_idx").on(table.status),
+    ownerIdx: index("prompts_owner_idx").on(table.owner),
     createdAtIdx: index("prompts_created_at_idx").on(table.createdAt),
   })
 );

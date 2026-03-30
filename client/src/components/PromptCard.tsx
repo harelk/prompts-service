@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import type { Prompt } from "../hooks/usePrompts";
 import StatusBadge from "./StatusBadge";
+import OwnerBadge from "./OwnerBadge";
 import ServiceChips from "./ServiceChips";
 
 interface PromptCardProps {
@@ -29,7 +30,10 @@ export default function PromptCard({ prompt }: PromptCardProps) {
       className="w-full text-right bg-background-surface rounded-lg p-4 shadow-sm border border-gray-100 hover:border-primary/30 hover:shadow-md active:scale-[0.99] transition-all fade-in"
     >
       <div className="flex items-start justify-between gap-2 mb-2">
-        <StatusBadge status={prompt.status} />
+        <div className="flex items-center gap-1.5">
+          <StatusBadge status={prompt.status} />
+          <OwnerBadge owner={prompt.owner} />
+        </div>
         <span className="text-xs text-text-tertiary">{formatDate(prompt.createdAt)}</span>
       </div>
 

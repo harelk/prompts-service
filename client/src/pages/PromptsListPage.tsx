@@ -5,7 +5,7 @@ import Layout from "../components/Layout";
 import PromptCard from "../components/PromptCard";
 import { usePrompts } from "../hooks/usePrompts";
 import { useServices } from "../hooks/useServices";
-import type { PromptStatus } from "../hooks/usePrompts";
+import type { PromptStatus, PromptOwner } from "../hooks/usePrompts";
 
 type FilterTab = "all" | PromptStatus;
 
@@ -18,9 +18,18 @@ const TABS: { key: FilterTab; label: string }[] = [
   { key: "archived", label: "ארכיון" },
 ];
 
+const OWNER_FILTER_OPTIONS: { value: PromptOwner | ""; label: string }[] = [
+  { value: "", label: "כל הבעלים" },
+  { value: "raout", label: "רעות" },
+  { value: "harel", label: "הראל" },
+  { value: "dvora", label: "דבורה" },
+  { value: "claude", label: "קלאוד" },
+];
+
 export default function PromptsListPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
+  const [selectedOwner, setSelectedOwner] = useState<PromptOwner | "">("");
   const [selectedServiceId, setSelectedServiceId] = useState<string | undefined>();
   const [serviceDropdownOpen, setServiceDropdownOpen] = useState(false);
   const [serviceSearch, setServiceSearch] = useState("");
@@ -70,6 +79,7 @@ export default function PromptsListPage() {
 
   const { prompts, loading, error, reload } = usePrompts({
     status: activeTab === "all" ? undefined : activeTab,
+    owner: selectedOwner || undefined,
     search: debouncedSearch || undefined,
     serviceId: selectedServiceId,
   });
@@ -159,6 +169,26 @@ export default function PromptsListPage() {
             )}
           </div>
         )}
+
+        {/* Owner Filter */}
+        <div className="relative">
+          <select
+            value={selectedOwner}
+            onChange={(e) => setSelectedOwner(e.target.value as PromptOwner | "")}
+            className={`w-full px-3 py-2.5 border rounded-md text-sm text-right appearance-none transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary ${
+              selectedOwner
+                ? "bg-primary/5 border-primary text-primary"
+                : "bg-background-surface border-gray-200 text-text-secondary"
+            }`}
+          >
+            {OWNER_FILTER_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+          <ChevronDown size={16} className="absolute top-1/2 -translate-y-1/2 start-3 text-text-tertiary pointer-events-none" />
+        </div>
 
         {/* Search */}
         <div className="relative">

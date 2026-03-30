@@ -3,11 +3,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ChevronRight, Edit2, Check, X, Trash2, Copy, CheckCheck, ChevronDown, RefreshCw, Mic } from "lucide-react";
 import Layout from "../components/Layout";
 import StatusBadge from "../components/StatusBadge";
+import OwnerBadge from "../components/OwnerBadge";
 import VoiceRecorder from "../components/VoiceRecorder";
 import { usePrompt } from "../hooks/usePrompts";
 import { useServices } from "../hooks/useServices";
 import { apiClient } from "../api/client";
-import type { PromptStatus } from "../hooks/usePrompts";
+import type { PromptStatus, PromptOwner } from "../hooks/usePrompts";
 
 function formatDate(isoString: string): string {
   return new Date(isoString).toLocaleDateString("he-IL", {
@@ -30,6 +31,7 @@ export default function PromptDetailPage() {
   const [editContent, setEditContent] = useState("");
   const [editNote, setEditNote] = useState("");
   const [editStatus, setEditStatus] = useState<PromptStatus>("draft");
+  const [editOwner, setEditOwner] = useState<PromptOwner>("claude");
   const [editServiceIds, setEditServiceIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -48,6 +50,7 @@ export default function PromptDetailPage() {
     setEditContent(prompt.content);
     setEditNote(prompt.note ?? "");
     setEditStatus(prompt.status);
+    setEditOwner(prompt.owner);
     setEditServiceIds(prompt.services.map((s) => s.id));
     setEditErrors({});
     setEditing(true);
@@ -74,6 +77,7 @@ export default function PromptDetailPage() {
         content: editContent.trim(),
         note: editNote.trim() || null,
         status: editStatus,
+        owner: editOwner,
         serviceIds: editServiceIds,
       });
       setEditing(false);
@@ -134,6 +138,13 @@ export default function PromptDetailPage() {
     { value: "in_progress", label: "בביצוע" },
     { value: "done", label: "הושלם" },
     { value: "archived", label: "ארכיון" },
+  ];
+
+  const OWNER_OPTIONS: { value: PromptOwner; label: string }[] = [
+    { value: "raout", label: "רעות" },
+    { value: "harel", label: "הראל" },
+    { value: "dvora", label: "דבורה" },
+    { value: "claude", label: "קלאוד" },
   ];
 
   if (loading) {
@@ -275,6 +286,27 @@ export default function PromptDetailPage() {
               </div>
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1">בעלים</label>
+              <div className="relative">
+                <select
+                  value={editOwner}
+                  onChange={(e) => setEditOwner(e.target.value as PromptOwner)}
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-md text-sm text-right bg-background-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary appearance-none"
+                >
+                  {OWNER_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown
+                  size={16}
+                  className="absolute top-1/2 -translate-y-1/2 start-3 text-text-tertiary pointer-events-none"
+                />
+              </div>
+            </div>
+
             {services.length > 0 && (
               <div>
                 <label className="block text-sm font-medium text-text-primary mb-2">סרוויסים</label>
@@ -312,9 +344,12 @@ export default function PromptDetailPage() {
         ) : (
           // View Mode
           <div className="space-y-4">
-            {/* Status + Date */}
+            {/* Status + Owner + Date */}
             <div className="flex items-center justify-between">
-              <StatusBadge status={prompt.status} />
+              <div className="flex items-center gap-1.5">
+                <StatusBadge status={prompt.status} />
+                <OwnerBadge owner={prompt.owner} />
+              </div>
               <span className="text-xs text-text-tertiary">{formatDate(prompt.createdAt)}</span>
             </div>
 
